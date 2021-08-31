@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// The base database service class that you can instiantiate or extend
+/// A wrapper class for firestore collections that you can use like this:
 /// ```dart
-/// DatabaseService<Note> noteDBs = DatabaseService<Note>("notes",fromDS: (id,data) => Note.fromDS(id,data), toMap: (note)=>note.toMap());
+/// Collection<Car> carsCollction = Collection<Car>("cars", fromJson: (id,data) => car.fromJson(id,data), toJson: (car)=>car.toJson());
 /// ```
 ///
 class Collection<T> {
@@ -73,43 +73,19 @@ class Collection<T> {
   }) async {
     CollectionReference collref = _db.collection(collection);
     Query ref;
-    if (args != null) {
-      for (final arg in args) {
-        if (arg is QueryArgs) {
-          if (ref == null)
-            ref = collref.where(
-              arg.key,
-              isEqualTo: arg.isEqualTo,
-              isGreaterThan: arg.isGreaterThan,
-              isGreaterThanOrEqualTo: arg.isGreaterThanOrEqualTo,
-              isLessThan: arg.isLessThan,
-              isLessThanOrEqualTo: arg.isLessThanOrEqualTo,
-              isNull: arg.isNull,
-              arrayContains: arg.arrayContains,
-              arrayContainsAny: arg.arrayContainsAny,
-              whereIn: arg.whereIn,
-            );
-          else
-            ref = ref.where(
-              arg.key,
-              isEqualTo: arg.isEqualTo,
-              isGreaterThan: arg.isGreaterThan,
-              isGreaterThanOrEqualTo: arg.isGreaterThanOrEqualTo,
-              isLessThan: arg.isLessThan,
-              isLessThanOrEqualTo: arg.isLessThanOrEqualTo,
-              isNull: arg.isNull,
-              arrayContains: arg.arrayContains,
-              arrayContainsAny: arg.arrayContainsAny,
-              whereIn: arg.whereIn,
-            );
-          ;
-        } else {
-          if (ref == null)
-            ref = collref.where(arg.key, isEqualTo: arg.value);
-          else
-            ref = ref.where(arg.key, isEqualTo: arg.value);
-        }
-      }
+    for (QueryArgs arg in (args ?? [])) {
+      ref = collref.where(
+        arg.key,
+        isEqualTo: arg.isEqualTo,
+        isGreaterThan: arg.isGreaterThan,
+        isGreaterThanOrEqualTo: arg.isGreaterThanOrEqualTo,
+        isLessThan: arg.isLessThan,
+        isLessThanOrEqualTo: arg.isLessThanOrEqualTo,
+        isNull: arg.isNull,
+        arrayContains: arg.arrayContains,
+        arrayContainsAny: arg.arrayContainsAny,
+        whereIn: arg.whereIn,
+      );
     }
     if (orderBy != null) {
       orderBy.forEach((order) {
@@ -170,42 +146,34 @@ class Collection<T> {
           ref = ref.orderBy(order.field, descending: order.descending);
       });
     }
-    if (args != null) {
-      for (final arg in args) {
-        if (arg is QueryArgs) {
-          if (ref == null)
-            ref = collref.where(
-              arg.key,
-              isEqualTo: arg.isEqualTo,
-              isGreaterThan: arg.isGreaterThan,
-              isGreaterThanOrEqualTo: arg.isGreaterThanOrEqualTo,
-              isLessThan: arg.isLessThan,
-              isLessThanOrEqualTo: arg.isLessThanOrEqualTo,
-              isNull: arg.isNull,
-              arrayContains: arg.arrayContains,
-              arrayContainsAny: arg.arrayContainsAny,
-              whereIn: arg.whereIn,
-            );
-          else
-            ref = ref.where(
-              arg.key,
-              isEqualTo: arg.isEqualTo,
-              isGreaterThan: arg.isGreaterThan,
-              isGreaterThanOrEqualTo: arg.isGreaterThanOrEqualTo,
-              isLessThan: arg.isLessThan,
-              isLessThanOrEqualTo: arg.isLessThanOrEqualTo,
-              isNull: arg.isNull,
-              arrayContains: arg.arrayContains,
-              arrayContainsAny: arg.arrayContainsAny,
-              whereIn: arg.whereIn,
-            );
-        } else {
-          if (ref == null)
-            ref = collref.where(arg.key, isEqualTo: arg.value);
-          else
-            ref = ref.where(arg.key, isEqualTo: arg.value);
-        }
-      }
+
+    for (QueryArgs arg in args ?? []) {
+      if (ref == null)
+        ref = collref.where(
+          arg.key,
+          isEqualTo: arg.isEqualTo,
+          isGreaterThan: arg.isGreaterThan,
+          isGreaterThanOrEqualTo: arg.isGreaterThanOrEqualTo,
+          isLessThan: arg.isLessThan,
+          isLessThanOrEqualTo: arg.isLessThanOrEqualTo,
+          isNull: arg.isNull,
+          arrayContains: arg.arrayContains,
+          arrayContainsAny: arg.arrayContainsAny,
+          whereIn: arg.whereIn,
+        );
+      else
+        ref = ref.where(
+          arg.key,
+          isEqualTo: arg.isEqualTo,
+          isGreaterThan: arg.isGreaterThan,
+          isGreaterThanOrEqualTo: arg.isGreaterThanOrEqualTo,
+          isLessThan: arg.isLessThan,
+          isLessThanOrEqualTo: arg.isLessThanOrEqualTo,
+          isNull: arg.isNull,
+          arrayContains: arg.arrayContains,
+          arrayContainsAny: arg.arrayContainsAny,
+          whereIn: arg.whereIn,
+        );
     }
     if (limit != null) {
       if (ref == null)
@@ -240,22 +208,18 @@ class Collection<T> {
       {List<QueryArgs> args = const []}) async {
     var ref = _db.collection(collection).orderBy(orderBy);
     for (final arg in args) {
-      if (arg is QueryArgs) {
-        ref = ref.where(
-          arg.key,
-          isEqualTo: arg.isEqualTo,
-          isGreaterThan: arg.isGreaterThan,
-          isGreaterThanOrEqualTo: arg.isGreaterThanOrEqualTo,
-          isLessThan: arg.isLessThan,
-          isLessThanOrEqualTo: arg.isLessThanOrEqualTo,
-          isNull: arg.isNull,
-          arrayContains: arg.arrayContains,
-          arrayContainsAny: arg.arrayContainsAny,
-          whereIn: arg.whereIn,
-        );
-      } else {
-        ref = ref.where(arg.key, isEqualTo: arg.value);
-      }
+      ref = ref.where(
+        arg.key,
+        isEqualTo: arg.isEqualTo,
+        isGreaterThan: arg.isGreaterThan,
+        isGreaterThanOrEqualTo: arg.isGreaterThanOrEqualTo,
+        isLessThan: arg.isLessThan,
+        isLessThanOrEqualTo: arg.isLessThanOrEqualTo,
+        isNull: arg.isNull,
+        arrayContains: arg.arrayContains,
+        arrayContainsAny: arg.arrayContainsAny,
+        whereIn: arg.whereIn,
+      );
     }
     QuerySnapshot query = await ref.startAt([from]).endAt([to]).get();
     return query.docs.map((doc) => fromJson(doc.id, doc.data())).toList();
@@ -268,22 +232,18 @@ class Collection<T> {
       {List<QueryArgs> args = const []}) {
     var ref = _db.collection(collection).orderBy(field, descending: true);
     for (final arg in args) {
-      if (arg is QueryArgs) {
-        ref = ref.where(
-          arg.key,
-          isEqualTo: arg.isEqualTo,
-          isGreaterThan: arg.isGreaterThan,
-          isGreaterThanOrEqualTo: arg.isGreaterThanOrEqualTo,
-          isLessThan: arg.isLessThan,
-          isLessThanOrEqualTo: arg.isLessThanOrEqualTo,
-          isNull: arg.isNull,
-          arrayContains: arg.arrayContains,
-          arrayContainsAny: arg.arrayContainsAny,
-          whereIn: arg.whereIn,
-        );
-      } else {
-        ref = ref.where(arg.key, isEqualTo: arg.value);
-      }
+      ref = ref.where(
+        arg.key,
+        isEqualTo: arg.isEqualTo,
+        isGreaterThan: arg.isGreaterThan,
+        isGreaterThanOrEqualTo: arg.isGreaterThanOrEqualTo,
+        isLessThan: arg.isLessThan,
+        isLessThanOrEqualTo: arg.isLessThanOrEqualTo,
+        isNull: arg.isNull,
+        arrayContains: arg.arrayContains,
+        arrayContainsAny: arg.arrayContainsAny,
+        whereIn: arg.whereIn,
+      );
     }
     var query = ref.startAfter([to]).endAt([from]).snapshots();
     return query.map((snap) =>
@@ -293,24 +253,24 @@ class Collection<T> {
   /// Creates new document based on the provided [data] and [id]  in the [collection]
   /// If [id] is null, [id] will be auto generated by firestore
   ///
-  Future<dynamic> create(Map<String, dynamic> data, {String id}) {
+  Future<dynamic> create(Map<String, dynamic> data, {String id}) async {
     if (id != null) {
-      return _db.collection(collection).doc(id).set(data);
+      return await _db.collection(collection).doc(id).set(data);
     } else {
-      return _db.collection(collection).add(data);
+      return await _db.collection(collection).add(data);
     }
   }
 
   ///
   /// Updates the document with [id] with the provided [data] to the [collection]
   ///
-  Future<void> update(String id, Map<String, dynamic> data) {
-    return _db.collection(collection).doc(id).update(data);
+  Future<void> update(String id, Map<String, dynamic> data) async {
+    return await _db.collection(collection).doc(id).update(data);
   }
 
   /// Removes item with [id] from [collection]
-  Future<void> remove(String id) {
-    return _db.collection(collection).doc(id).delete();
+  Future<void> remove(String id) async {
+    return await _db.collection(collection).doc(id).delete();
   }
 }
 
