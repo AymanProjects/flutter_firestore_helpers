@@ -1,38 +1,33 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 
 /// A wrapper class for firestore collections that you can use like this:
 /// ```dart
 /// Collection<Car> carsCollction = Collection<Car>("cars", fromJson: (id,data) => car.fromJson(id,data), toJson: (car)=>car.toJson());
 /// ```
-///
 class Collection<T> {
   /// path of the collection to use as base path for all the operations
   String collection;
 
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  ///
   /// Function to convert the firestore [DocumentSnapshot] into the model class [T]
   /// provides [id] and [Map<String,dynamic> data] and must return [T] object.
-  ///
   final T Function(String id, Map<String, dynamic> json) fromJson;
 
-  ///
   ///Function to convert object [T] to [Map<String,dynamic>], receives instance of [T],
   ///and should always return [Map<String,dynamic>]
-  ///
   final Map<String, dynamic> Function(T model) toJson;
 
-  /// Create instance of Database service
+  /// Create instance of Collection
   /// [collection] path is required
   /// [fromJson] is required to get document snapshot as object [T]
-  ///
   Collection(this.collection, {this.fromJson, this.toJson});
 
   /// Returns instance of FirebaseFirestore
   FirebaseFirestore get db => _db;
 
-  /// Get a single document of [id] from the [collection]
+  /// Get a single object of [id] from the [collection]
   /// Returns null if the document does not exist
   Future<T> getSingle(String id) async {
     var snap = await _db.collection(collection).doc(id).get();
@@ -40,7 +35,7 @@ class Collection<T> {
     return fromJson(snap.id, snap.data());
   }
 
-  /// Returns a single document of [id] from [collection]
+  /// Returns a single object of [id] from [collection]
   /// as stream so that updates can be listened
   Stream<T> getSingleAsStream(String id) {
     return _db
@@ -50,21 +45,20 @@ class Collection<T> {
         .map((snap) => snap.exists ? fromJson(snap.id, snap.data()) : null);
   }
 
-  /// Returns list of all the documents from [collection]
-  /// as a stream so that changes can be listened
-  Stream<List<T>> getAllAsStream() {
+  /// Returns list of all the objects from [collection]
+  /// as a stream so that changes can be listened to.
+  Stream<List<T>> asStream() {
     var ref = _db.collection(collection);
     return ref.snapshots().map((list) =>
         list.docs.map((doc) => fromJson(doc.id, doc.data())).toList());
   }
 
-  /// Returns the list of documents from [collection], in the order provided in
+  /// Returns the list of objects from [collection], in the order provided in
   /// [orderBy] and matches the [args] supplied.
-  /// use [startAfter], [startAt], [endAt], [endBefore] to perform cursor based queries
-  /// and pagination of data
+  /// use [startAfter], [startAt], [endAt], [endBefore] to perform pagination
   Future<List<T>> where({
-    List<OrderBy> orderBy,
     List<QueryArgs> args,
+    List<OrderBy> orderBy,
     int limit,
     dynamic startAfter,
     dynamic startAt,
@@ -122,14 +116,13 @@ class Collection<T> {
     return query.docs.map((doc) => fromJson(doc.id, doc.data())).toList();
   }
 
-  /// Returns the list of documents from [collection], in the order provided in
+  /// Returns the list of objects from [collection], in the order provided in
   /// [orderBy] and matches the [args] supplied as a stream so that changes can be
-  /// listened.
-  /// Use [startAfter], [startAt], [endAt], [endBefore] to perform cursor based
-  /// queries and pagination of data
+  /// listened to.
+  /// Use [startAfter], [startAt], [endAt], [endBefore] to perform pagination
   Stream<List<T>> whereAsStream({
-    List<OrderBy> orderBy,
     List<QueryArgs> args,
+    List<OrderBy> orderBy,
     int limit,
     dynamic startAfter,
     dynamic startAt,
@@ -201,10 +194,10 @@ class Collection<T> {
           snap.docs.map((doc) => fromJson(doc.id, doc.data())).toList());
   }
 
-  /// Returns the list of documents from [from] date to [to] date matched by [orderBy]
+  /// Returns the list of objects from [from] date to [to] date matched by [orderBy]
   /// is ordered by the [orderBy] provided.
   /// additional [args] can be supplied to perform specific query.
-  Future<List<T>> getAllByDate(String orderBy, DateTime from, DateTime to,
+  Future<List<T>> betweenDates(String orderBy, DateTime from, DateTime to,
       {List<QueryArgs> args = const []}) async {
     var ref = _db.collection(collection).orderBy(orderBy);
     for (final arg in args) {
@@ -225,10 +218,10 @@ class Collection<T> {
     return query.docs.map((doc) => fromJson(doc.id, doc.data())).toList();
   }
 
-  /// Returns the list of documents from [from] date to [to] date matched by [field] from [collection]
+  /// Returns the list of objects from [from] date to [to] date matched by [field] from [collection]
   /// as a stream so that changes can be listened and is ordered by the [field] provided.
   /// additional [args] can be supplied to perform specific query.
-  Stream<List<T>> getAllByDateAsStream(String field, DateTime from, DateTime to,
+  Stream<List<T>> betweenDatesAsStream(String field, DateTime from, DateTime to,
       {List<QueryArgs> args = const []}) {
     var ref = _db.collection(collection).orderBy(field, descending: true);
     for (final arg in args) {
@@ -250,9 +243,8 @@ class Collection<T> {
         snap.docs.map((doc) => fromJson(doc.id, doc.data())).toList());
   }
 
-  /// Creates new document based on the provided [data] and [id]  in the [collection]
+  /// Creates new document based on the provided [data] and [id] in the [collection]
   /// If [id] is null, [id] will be auto generated by firestore
-  ///
   Future<dynamic> create(Map<String, dynamic> data, {String id}) async {
     if (id != null) {
       return await _db.collection(collection).doc(id).set(data);
@@ -261,56 +253,31 @@ class Collection<T> {
     }
   }
 
-  ///
   /// Updates the document with [id] with the provided [data] to the [collection]
-  ///
   Future<void> update(String id, Map<String, dynamic> data) async {
     return await _db.collection(collection).doc(id).update(data);
   }
 
-  /// Removes item with [id] from [collection]
-  Future<void> remove(String id) async {
+  /// Deletes item with [id] from [collection]
+  Future<void> delete(String id) async {
     return await _db.collection(collection).doc(id).delete();
   }
 }
 
 /// Supply query to query the collection based on [key] field and the
 /// values supplied to various arguments
-/// Please refer to firestore documentation for understanding
-/// various operators of the query
 class QueryArgs {
-  /// Field to match
   final dynamic key;
   final dynamic value;
-
-  /// performs equality == check
   final dynamic isEqualTo;
-
-  /// performs less than < check
   final dynamic isLessThan;
-
-  /// performs less than or equal to <= check
   final dynamic isLessThanOrEqualTo;
-
-  /// performs greater than or equal to >= check
   final dynamic isGreaterThanOrEqualTo;
-
-  /// performs greater than > check
   final dynamic isGreaterThan;
-
-  /// performs array contains check
   final dynamic arrayContains;
-
-  /// performs array contains any check
   final List<dynamic> arrayContainsAny;
-
-  /// performs where in check
   final List<dynamic> whereIn;
-
-  /// performs if is null check
   final bool isNull;
-
-  /// Create instance of QueryArgs
   QueryArgs(
     this.key, {
     this.value,
@@ -328,12 +295,7 @@ class QueryArgs {
 
 /// Provide ordering option to queries
 class OrderBy {
-  /// Field to order by
   final String field;
-
-  /// Whether the order should be descending, default is false
   final bool descending;
-
-  /// Creates instance of OrderBy
   OrderBy(this.field, {this.descending = false});
 }
